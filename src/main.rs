@@ -5,64 +5,48 @@
 #![allow(non_snake_case)]
 #![allow(unused_variables)]
 
-use core::ffi::c_void;
 use core::panic::PanicInfo;
 
-#[derive(Clone, Copy)]
-#[repr(transparent)]
-pub struct EFI_HANDLE(*mut c_void);
+use uefi_bootloader::prelude::*;
+use uefi_bootloader::init::*;
+use uefi_bootloader::console::*;
+use uefi_bootloader::mm::*;
 
-#[derive(PartialEq)]
-#[repr(usize)]
-pub enum EFI_STATUS {
-    SUCCESS                 =  0,
-}
-
-#[repr(C)]
-pub struct EFI_SYSTEM_TABLE {
-    pub Hdr: EFI_TABLE_HEADER,
-    pub FirmwareVendor: *const u16,
-    pub FirmwareRevision: u32,
-    pub ConsoleInHandle: EFI_HANDLE,
-    pub ConIn: *mut EFI_SIMPLE_TEXT_INPUT_PROTOCOL,
-    pub ConsoleOutHandle: EFI_HANDLE,
-    pub ConOut: *mut EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL,
-    pub StandardErrorHandle: EFI_HANDLE,
-    pub StdErr: EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL,// TBD
-}
-
-#[repr(C)]
-pub struct EFI_TABLE_HEADER {
-	pub Signature: u64,
-	pub Revision: u32,
-	pub HeaderSize: u32,
-	pub CRC32: u32,
-	pub Reserved: u32,
-}
-
-#[repr(C)]
-pub struct EFI_SIMPLE_TEXT_INPUT_PROTOCOL {
-    pub Reset: unsafe extern "C" fn(This: &EFI_SIMPLE_TEXT_INPUT_PROTOCOL, ExtendedVerification: bool) -> EFI_STATUS,
-    pub ReadKeyStroke: unsafe extern "C" fn(This: &EFI_SIMPLE_TEXT_INPUT_PROTOCOL, Key: &EFI_INPUT_KEY) -> EFI_STATUS,
-    // TBD	
-}
-
-#[repr(C)]
-pub struct EFI_INPUT_KEY {
-	pub ScanCode: u16,
-	pub UnicodeChar: u16,
-}
-
-#[repr(C)]
-pub struct EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL {
-    pub Reset: unsafe extern "C" fn(This: &EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL, ExtendedVerification: bool) -> EFI_STATUS,
-    pub OutputString: unsafe extern "C" fn(This: &EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL, String: *const u16) -> EFI_STATUS,
-    // TBD	
-}
-
+use core::mem::MaybeUninit;
+use core::ptr;
 
 #[no_mangle]
-pub extern "C" fn efi_main(image: EFI_HANDLE, st: EFI_SYSTEM_TABLE) -> EFI_STATUS {
+pub extern "C" fn efi_main(image: &EFI_HANDLE, st: &EFI_SYSTEM_TABLE) -> EFI_STATUS {
+	efi_init(&st);
+	efi_print_clear();
+	efi_println!("start efi_main");
+
+	let mut memory = 0x7fffffff;
+	// efi_print("before allocate page\n", &st);
+
+	let mut buffer = [0_u8;10000];
+	let mut map_size = buffer.len();
+	let map_buffer: *mut EFI_MEMORY_DESCRIPTOR = buffer.as_ptr() as *mut EFI_MEMORY_DESCRIPTOR;
+	let mut map_key = 0;
+    let mut entry_size = 0;
+    let mut entry_version = 0;
+
+	unsafe {
+		((*BOOT_SERVICES).GetMemoryMap)(
+			&mut map_size,
+			map_buffer,
+			&mut map_key,
+			&mut entry_size,
+			&mut entry_version,
+		);
+		((*BOOT_SERVICES).SetWatchdogTimer)(0,0,0,ptr::null());
+	}
+	mm_init();
+	// efi_print("allocate page\n", &st);
+	efi_println!("end efi_main");
+	loop{
+
+	}
     EFI_STATUS::SUCCESS
 }
 
