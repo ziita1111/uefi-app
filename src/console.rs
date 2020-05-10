@@ -18,20 +18,40 @@ impl Console {
         }
 
         unsafe {
-            (stdout.OutputString)(stdout, buf.as_ptr());
+            (stdout.OutputString)(stdout, buf.as_ptr())
+        }
+    }
+
+    pub extern "C" fn efi_print_u8(&self, s: &[u8]) -> EFI_STATUS {
+        let stdout: &mut EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL = unsafe { &mut *((*SYSTEM_TABLE).ConOut) };
+        let mut buf = [0u16;100];
+
+        for i in 0..s.len() {
+            buf[i] = s[i] as u16;
         }
 
-        EFI_STATUS::SUCCESS
+        unsafe {
+            (stdout.OutputString)(stdout, buf.as_ptr())
+        }
     }
+
+    pub extern "C" fn efi_print_u16(&self, s: &[u16]) -> EFI_STATUS {
+        let stdout: &mut EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL = unsafe { &mut *((*SYSTEM_TABLE).ConOut) };
+
+        unsafe {
+            (stdout.OutputString)(stdout, s.as_ptr())
+        }
+    }
+
+    pub extern "C" fn efi_print_clear(&self) -> EFI_STATUS {
+        let stdout: &mut EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL = unsafe { &mut *((*SYSTEM_TABLE).ConOut) };
+        unsafe {
+            (stdout.Reset)(stdout, false)
+        }
+    }
+
 }
 
-pub extern "C" fn efi_print_clear() -> EFI_STATUS {
-    let stdout: &mut EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL = unsafe { &mut *((*SYSTEM_TABLE).ConOut) };
-    unsafe {
-        (stdout.Reset)(stdout, false);
-    }
-    EFI_STATUS::SUCCESS
-}
 
 impl fmt::Write for Console {
     fn write_str(&mut self, s: &str) -> fmt::Result {
@@ -43,7 +63,7 @@ impl fmt::Write for Console {
 #[doc(hidden)]
 pub fn _print(args: ::core::fmt::Arguments) {
     use core::fmt::Write;
-    unsafe{ (*CON).write_fmt(args); }
+    unsafe{ (*CON).write_fmt(args).expect("print failed"); }
 }
 
 /// Prints to the host through the serial interface.
