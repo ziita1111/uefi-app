@@ -23,11 +23,11 @@ pub extern "C" fn efi_main(image: EFI_HANDLE, st: &EFI_SYSTEM_TABLE) -> EFI_STAT
 	loop{
 
 	}
-    EFI_STATUS::SUCCESS
+	EFI_STATUS::SUCCESS
 }
 
 #[panic_handler]
 fn panic(_panic: &PanicInfo<'_>) -> ! {
 	efi_println!("panic!");
-    loop {}
+	loop {}
 }

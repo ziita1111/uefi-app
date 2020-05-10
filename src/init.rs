@@ -15,8 +15,7 @@ pub static simple_file_system_protocol_guid: EFI_GUID = EFI_GUID {
 	a: 0x0964e5b22, 
 	b: 0x6459, 
 	c: 0x11d2,
-	d: [0x8e, 0x39, 0x00, 0xa0,
-	0xc9, 0x69, 0x72, 0x3b]
+	d: [0x8e, 0x39, 0x00, 0xa0, 0xc9, 0x69, 0x72, 0x3b]
 };
 
 pub static loaded_image_protocol_guid: EFI_GUID = EFI_GUID {
@@ -37,8 +36,6 @@ pub extern "C" fn efi_init(image: EFI_HANDLE, st: &EFI_SYSTEM_TABLE) {
 	unsafe{ (*CON).efi_print_clear(); }
 
 	unsafe{ ((*BOOT_SERVICES).SetWatchdogTimer)(0,0,0,ptr::null()); }
-
-	// efi_println!("efi_init");
 
 	{
 		let mut fp = ptr::null_mut();
