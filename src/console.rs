@@ -11,7 +11,7 @@ impl Console {
     pub extern "C" fn efi_print(&self, s: &str) -> EFI_STATUS{
         let stdout: &mut EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL = unsafe { &mut *((*SYSTEM_TABLE).ConOut) };
         let string = s.as_bytes();
-        let mut buf = [0u16; 100];
+        let mut buf = [0u16; 1000];
 
         for i in 0..string.len() {
             buf[i] = string[i] as u16;
@@ -24,7 +24,7 @@ impl Console {
 
     pub extern "C" fn efi_print_u8(&self, s: &[u8]) -> EFI_STATUS {
         let stdout: &mut EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL = unsafe { &mut *((*SYSTEM_TABLE).ConOut) };
-        let mut buf = [0u16;100];
+        let mut buf = [0u16;1000];
 
         for i in 0..s.len() {
             buf[i] = s[i] as u16;

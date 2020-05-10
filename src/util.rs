@@ -1,8 +1,8 @@
 use crate::prelude::*;
 
-pub extern "C" fn str_to_u16(s: &str) -> [u16;100] {
+pub extern "C" fn str_to_u16(s: &str) -> [u16;1000] {
 	let string = s.as_bytes();
-    let mut buf = [0u16; 100];
+    let mut buf = [0u16; 1000];
 
     for i in 0..string.len() {
         buf[i] = string[i] as u16;
