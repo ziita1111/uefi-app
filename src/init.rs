@@ -40,34 +40,40 @@ pub extern "C" fn efi_init(image: EFI_HANDLE, st: &EFI_SYSTEM_TABLE) {
 
 	// efi_println!("efi_init");
 
-	unsafe {
+	{
 		let mut fp = ptr::null_mut();
-		let ret = ((*BOOT_SERVICES).HandleProtocol)(image, &loaded_image_protocol_guid, &mut fp);
-		LIP = fp as *mut EFI_LOADED_IMAGE_PROTOCOL;
+		let ret = unsafe {
+			((*BOOT_SERVICES).HandleProtocol)(image, &loaded_image_protocol_guid, &mut fp)
+		};
+		unsafe{ LIP = fp as *mut EFI_LOADED_IMAGE_PROTOCOL; }
 		if ret!=EFI_STATUS::SUCCESS{
 			efi_println!("(*BOOT_SERVICES).HandleProtocol: {:?}", ret);
 			panic!();
 		}
-		efi_println!("LIP(EFI_LOADED_IMAGE_PROTOCOL): {:?}", LIP);
+		efi_println!("LIP(EFI_LOADED_IMAGE_PROTOCOL): {:?}", unsafe{ LIP });
 	}
-
-	unsafe{
+	
+	{
 		let mut fp = ptr::null_mut();
-		let ret = ((*BOOT_SERVICES).HandleProtocol)((*LIP).DeviceHandle, &simple_file_system_protocol_guid, &mut fp);
+		let ret = unsafe {
+			((*BOOT_SERVICES).HandleProtocol)((*LIP).DeviceHandle, &simple_file_system_protocol_guid, &mut fp)
+		};
 		if ret!=EFI_STATUS::SUCCESS{
 			efi_println!("(*BOOT_SERVICES).HandleProtocol: {:?}", ret);
 			panic!();
 		}
-		SFSP = fp as *mut EFI_SIMPLE_FILE_SYSTEM_PROTOCOL;
-		efi_println!("SFSP(EFI_SIMPLE_FILE_SYSTEM_PROTOCOL): {:?}", SFSP);
+		unsafe{ SFSP = fp as *mut EFI_SIMPLE_FILE_SYSTEM_PROTOCOL; }
+		efi_println!("SFSP(EFI_SIMPLE_FILE_SYSTEM_PROTOCOL): {:?}", unsafe{ SFSP });
 	}
 
-	unsafe{
-		let ret = ((*SFSP).OpenVolume)(&mut (*SFSP), &mut ROOT);
+	{
+		let ret = unsafe {
+			((*SFSP).OpenVolume)(&mut (*SFSP), &mut ROOT)
+		};
 		if ret!=EFI_STATUS::SUCCESS{
 			efi_println!("(*SFSP).OpenVolume: {:?}", ret);
 			panic!();
 		}
-		efi_println!("ROOT(EFI_FILE_PROTOCOL): {:?}", ROOT);
+		efi_println!("ROOT(EFI_FILE_PROTOCOL): {:?}", unsafe{ ROOT });
 	}
 }
