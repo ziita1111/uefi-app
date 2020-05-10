@@ -66,7 +66,6 @@ pub fn _print(args: ::core::fmt::Arguments) {
     unsafe{ (*CON).write_fmt(args).expect("print failed"); }
 }
 
-/// Prints to the host through the serial interface.
 #[macro_export]
 macro_rules! efi_print {
     ($($arg:tt)*) => {
@@ -74,7 +73,6 @@ macro_rules! efi_print {
     };
 }
 
-/// Prints to the host through the serial interface, appending a newline.
 #[macro_export]
 macro_rules! efi_println {
     () => ($crate::efi_print!("\r\n"));
