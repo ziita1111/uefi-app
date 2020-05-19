@@ -18,8 +18,8 @@ use core::ptr;
 pub extern "C" fn efi_main(image: EFI_HANDLE, st: &EFI_SYSTEM_TABLE) -> EFI_STATUS {
 	efi_init(image, &st);
 	show_memory_map();
-	let buf: [u16;1000] = read_file("configure");
-	// print_u16(&buf);
+	let mut file = FILE::new("configure");
+	file.show();
 	loop{
 
 	}
