@@ -2,9 +2,6 @@ use crate::prelude::*;
 
 use core::intrinsics::transmute;
 
-static MEMORY_MAP_SIZE: usize = 0x3000;
-static EFI_MAX_USABLE_ADDRESS: u64 = 0xffffffff;
-
 extern "C" fn efi_allocate_pages_real(address: u64, pages: usize, 
 	alloctype: EFI_ALLOCATE_TYPE, memtype: EFI_MEMORY_TYPE) -> Result<u64, ()> {
 	let mut memory = address;
@@ -18,25 +15,26 @@ extern "C" fn efi_allocate_pages_real(address: u64, pages: usize,
 
 extern "C" fn efi_allocate_any_pages(pages: usize) -> Result<u64, ()> {
 	efi_allocate_pages_real(
-		EFI_MAX_USABLE_ADDRESS, 
+		0, 
 		pages, 
-		EFI_ALLOCATE_TYPE::AllocateMaxAddress, 
+		EFI_ALLOCATE_TYPE::AllocateAnyPages, 
 		EFI_MEMORY_TYPE::EfiLoaderData
 		)
 }
 
-extern "C" fn efi_get_memory_map(map_size: &mut usize, memory_map:  *mut EFI_MEMORY_DESCRIPTOR, 
-	map_key: &mut usize, desc_size: &mut usize, desc_ver: &mut u32) -> Result<(),()> {
+extern "C" fn efi_get_memory_map(mut map_size: &mut usize, memory_map:  *mut EFI_MEMORY_DESCRIPTOR, 
+	mut map_key: &mut usize, mut desc_size: &mut usize, mut desc_ver: &mut u32) -> Result<(),()> {
 	unsafe {
-		match ((*BOOT_SERVICES).GetMemoryMap)(map_size, memory_map, map_key, desc_size, desc_ver) {
+		match ((*BOOT_SERVICES).GetMemoryMap)(&mut map_size, memory_map, &mut map_key, &mut desc_size, &mut desc_ver) {
 			EFI_STATUS::SUCCESS => Ok(()),
 			_ => Err(())
 		}
 	}
 }
 
-pub extern "C" fn mm_init() {
-	let memory_map : *mut EFI_MEMORY_DESCRIPTOR = match efi_allocate_any_pages(2*((MEMORY_MAP_SIZE+0xfff)>>12)) {
+pub extern "C" fn show_memory_map() {
+	let pages = 2;
+	let memory_map : *mut EFI_MEMORY_DESCRIPTOR = match efi_allocate_any_pages(pages) {
 		Ok(val) => {
 			efi_println!("memory_map: {:x}", val);
 			unsafe{ transmute::<u64, *mut EFI_MEMORY_DESCRIPTOR>(val) }
@@ -47,10 +45,11 @@ pub extern "C" fn mm_init() {
 		},
 	};
 
-	let mut map_size = MEMORY_MAP_SIZE;
+	let mut map_size = pages*4096;
 	let mut map_key = 0;
 	let mut desc_size = 0;
 	let mut desc_ver = 0;
+
 	match efi_get_memory_map(&mut map_size, memory_map, &mut map_key, &mut desc_size, &mut desc_ver) {
 		Ok(_) => {
 			efi_println!("map size: {:x}", map_size);
@@ -60,4 +59,12 @@ pub extern "C" fn mm_init() {
 			panic!()
 		}
 	};
+
+	let mut p = memory_map as *mut u8;
+	for i in 0..map_size/desc_size{
+		unsafe{ 
+			efi_println!("{} ", (*(p as *mut EFI_MEMORY_DESCRIPTOR)));
+		}
+		unsafe{ p = p.add(desc_size); }
+	}
 }

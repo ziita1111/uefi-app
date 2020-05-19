@@ -1,5 +1,4 @@
 use crate::prelude::*;
-use core::ffi::c_void;
 use core::ptr;
 
 pub static mut SYSTEM_TABLE: *const EFI_SYSTEM_TABLE = 0 as *const _;
@@ -36,6 +35,13 @@ pub extern "C" fn efi_init(image: EFI_HANDLE, st: &EFI_SYSTEM_TABLE) {
 	unsafe{ (*CON).efi_print_clear(); }
 
 	unsafe{ ((*BOOT_SERVICES).SetWatchdogTimer)(0,0,0,ptr::null()); }
+
+	unsafe{
+		efi_println!("SYSTEM_TABLE: {:x}", SYSTEM_TABLE as usize);
+		efi_println!("BOOT_SERVICES: {:x}", BOOT_SERVICES as usize);
+		efi_println!("RUNTIME_SERVICES: {:x}", RUNTIME_SERVICES as usize);
+		efi_println!("CON: {:x}", CON as usize);
+	}
 
 	{
 		let mut fp = ptr::null_mut();

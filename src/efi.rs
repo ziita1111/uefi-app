@@ -1,4 +1,5 @@
 use core::ffi::c_void;
+use core::fmt;
 
 const ERROR_BIT: usize = 1 << (core::mem::size_of::<usize>() * 8 - 1);
 
@@ -132,10 +133,10 @@ pub struct EFI_BOOT_SERVICES {
 	pub Hdr: EFI_TABLE_HEADER,
 	// Task Priority Services
 	dummy1: [usize;2], 
-	pub AllocatePages: unsafe extern "C" fn(Type: EFI_ALLOCATE_TYPE, MemoryType: EFI_MEMORY_TYPE, 
-		Pages:usize, Memory: &mut u64) -> EFI_STATUS,
 
 	// Memory Services
+	pub AllocatePages: unsafe extern "C" fn(Type: EFI_ALLOCATE_TYPE, MemoryType: EFI_MEMORY_TYPE, 
+		Pages:usize, Memory: &mut u64) -> EFI_STATUS,
 	dymmy2a: [usize;1], 
 	pub GetMemoryMap: unsafe extern "C" fn(MemoryMapSize: &mut usize, MemoryMap: *mut EFI_MEMORY_DESCRIPTOR,  
 		MapKey: &mut usize, DescriptorSize: &mut usize, DescriptorVersion: &mut u32) -> EFI_STATUS,
@@ -221,8 +222,8 @@ pub enum EFI_ALLOCATE_TYPE {
     MaxAllocateType,
 }
 
-#[derive(PartialEq)]
-#[repr(usize)]
+#[derive(Debug, PartialEq, Copy, Clone)]
+#[repr(u32)]
 pub enum EFI_MEMORY_TYPE {
 	EfiReservedMemoryType,
 	EfiLoaderCode,
@@ -242,19 +243,49 @@ pub enum EFI_MEMORY_TYPE {
 	EfiMaxMemoryType,
 }
 
+impl fmt::Display for EFI_MEMORY_TYPE {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    	let string = match *self {
+    		EFI_MEMORY_TYPE::EfiReservedMemoryType => "ReservedMemory",
+    		EFI_MEMORY_TYPE::EfiLoaderCode => "LoaderCode",
+    		EFI_MEMORY_TYPE::EfiLoaderData => "LoaderData",
+    		EFI_MEMORY_TYPE::EfiBootServicesCode => "BootServicesCode",
+    		EFI_MEMORY_TYPE::EfiBootServicesData => "BootServicesData",
+    		EFI_MEMORY_TYPE::EfiRuntimeServicesCode => "RuntimeServicesCode",
+    		EFI_MEMORY_TYPE::EfiRuntimeServicesData => "RuntimeServicesData",
+    		EFI_MEMORY_TYPE::EfiConventionalMemory => "Conventional",
+    		EFI_MEMORY_TYPE::EfiUnusableMemory => "Unusable",
+    		EFI_MEMORY_TYPE::EfiACPIReclaimMemory => "ACPIReclaim",
+    		EFI_MEMORY_TYPE::EfiACPIMemoryNVS => "ACPIMemoryNVS ",
+    		EFI_MEMORY_TYPE::EfiMemoryMappedIO => "MemoryMappedIO",
+    		EFI_MEMORY_TYPE::EfiMemoryMappedIOPortSpace => "MemoryMappedIOPortSpace",
+    		EFI_MEMORY_TYPE::EfiPalCode => "PalCode",
+    		EFI_MEMORY_TYPE::EfiPersistentMemory => "PersistentMemory",
+    		_ => "",
+    	};
+        write!(f, "{:>20}", string)
+    }
+}
+
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 #[repr(C)]
 pub struct MemoryMapKey(usize);
 
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Copy, Clone)]
 pub struct EFI_MEMORY_DESCRIPTOR {
-	pub Type: u32,
+	pub Type: EFI_MEMORY_TYPE,
 	padding: u32,
 	pub PhysicalStart: u64,
 	pub VirtualStart: u64,
 	pub NumberOfPages: u64,
 	pub Attribute: u64,
+}
+
+impl fmt::Display for EFI_MEMORY_DESCRIPTOR {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{} {:x}-{:x}", self.Type, self.PhysicalStart, self.PhysicalStart+self.NumberOfPages*4096)
+    }
 }
 
 #[derive(Debug, Copy, Clone)]
